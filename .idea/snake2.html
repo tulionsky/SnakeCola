@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!CODIGO CON QUEUE INICIAL (NO FUNCIONA👍)>
+<!BUENO, SI FUNCIONA, PERO FUNCIONA MAL 👎>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with Queue</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<canvas id="snakeCanvas" width="400" height="400"></canvas>
+<script>
+    class Queue {
+        constructor() {
+            this.items = [];
+        }
+
+        enqueue(element) {
+            this.items.push(element);
+        }
+
+        dequeue() {
+            if(this.isEmpty()) return null;
+            return this.items.shift();
+        }
+
+        front() {
+            if(this.isEmpty()) return null;
+            return this.items[0];
+        }
+
+        back() {
+            if(this.isEmpty()) return null;
+            return this.items[this.items.length - 1];
+        }
+
+        isEmpty() {
+            return this.items.length === 0;
+        }
+
+        size() {
+            return this.items.length;
+        }
+
+        getAll() {
+            return [...this.items];
+        }
+    }
+
+    const canvas = document.getElementById('snakeCanvas');
+    const ctx = canvas.getContext('2d');
+    const box = 20;
+
+    let snake = new Queue();
+    snake.enqueue({ x: 9 * box, y: 9 * box });
+
+    let direction = 'RIGHT';
+    let food = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+    };
+
+    document.addEventListener('keydown', directionControl);
+
+    function directionControl(event) {
+        if (event.keyCode === 37 && direction !== 'RIGHT') direction = 'LEFT';
+        if (event.keyCode === 38 && direction !== 'DOWN') direction = 'UP';
+        if (event.keyCode === 39 && direction !== 'LEFT') direction = 'RIGHT';
+        if (event.keyCode === 40 && direction !== 'UP') direction = 'DOWN';
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const snakeBody = snake.getAll();
+        for (let i = 0; i < snakeBody.length; i++) {
+            ctx.fillStyle = (i === 0) ? 'green' : 'lightgreen';
+            ctx.fillRect(snakeBody[i].x, snakeBody[i].y, box, box);
+            ctx.strokeStyle = 'darkgreen';
+            ctx.strokeRect(snakeBody[i].x, snakeBody[i].y, box, box);
+        }
+
+        ctx.fillStyle = 'red';
+        ctx.fillRect(food.x, food.y, box, box);
+
+        let snakeHead = snake.front();
+        let snakeX = snakeHead.x;
+        let snakeY = snakeHead.y;
+
+        if (direction === 'LEFT') snakeX -= box;
+        if (direction === 'UP') snakeY -= box;
+        if (direction === 'RIGHT') snakeX += box;
+        if (direction === 'DOWN') snakeY += box;
+
+        // Verificar colisiones con los bordes
+        if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height) {
+            clearInterval(game);
+            alert('Game Over!');
+            return;
+        }
+
+        const newHead = { x: snakeX, y: snakeY };
+
+        // Verificar colisión con el cuerpo antes de agregar la nueva cabeza
+        if (collision(newHead, snakeBody)) {
+            clearInterval(game);
+            alert('Game Over!');
+            return;
+        }
+
+        // Primero agregamos la nueva cabeza
+        snake.enqueue(newHead);
+
+        // Luego verificamos si comió la comida
+        if (snakeX === food.x && snakeY === food.y) {
+            // Si comió la comida, no removemos la cola (crece)
+            food = {
+                x: Math.floor(Math.random() * 20) * box,
+                y: Math.floor(Math.random() * 20) * box
+            };
+        } else {
+            // Si no comió la comida, removemos la cola
+            snake.dequeue();
+        }
+
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText('Score: ' + (snake.size() - 1), 10, 20);
+    }
+
+    function collision(head, array) {
+        return array.some(segment => head.x === segment.x && head.y === segment.y);
+    }
+
+    let game = setInterval(draw, 100);
+</script>
+</body>
+</html>
